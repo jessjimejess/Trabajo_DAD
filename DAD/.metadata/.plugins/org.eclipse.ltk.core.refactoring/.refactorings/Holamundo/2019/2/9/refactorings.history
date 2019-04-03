@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Rename type &apos;holamundo.CommSender&apos; to &apos;TcpServer&apos;&#x0A;- Original project: &apos;Holamundo&apos;&#x0A;- Original element: &apos;holamundo.CommSender&apos;&#x0A;- Renamed element: &apos;holamundo.TcpServer&apos;&#x0A;- Update references to refactored element&#x0A;- Update textual occurrences in comments and strings" description="Rename type &apos;CommSender&apos;" flags="589830" id="org.eclipse.jdt.ui.rename.type" input="/src\/main\/java&lt;holamundo{CommSender.java[CommSender" matchStrategy="1" name="TcpServer" qualified="false" references="true" similarDeclarations="false" stamp="1551260934872" textual="false" version="1.0"/>
+</session>

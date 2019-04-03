@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring accessors="true" comment="Delete 2 elements from project &apos;Holamundo&apos;&#x0A;- Original project: &apos;Holamundo&apos;&#x0A;- Original elements:&#x0A;     holamundo.RestServer.java&#x0A;     holamundo.RestServerDatabase.java" description="Delete elements" element1="/src\/main\/java&lt;holamundo{RestServer.java" element2="/src\/main\/java&lt;holamundo{RestServerDatabase.java" elements="2" flags="589830" id="org.eclipse.jdt.ui.delete" resources="0" stamp="1553076427641" subPackages="false" version="1.0"/>
+</session>
