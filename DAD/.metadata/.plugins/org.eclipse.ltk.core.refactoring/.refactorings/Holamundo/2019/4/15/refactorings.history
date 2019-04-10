@@ -1,0 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<session version="1.0">
+<refactoring comment="Extract method &apos;private Date convierteFecha(String fechaInicio, DateFormat formate)&apos; from &apos;holamundo.RestServerDatabase.handleActivacionControlParental()&apos; to &apos;holamundo.RestServerDatabase&apos;&#x0A;- Original project: &apos;Holamundo&apos;&#x0A;- Method name: &apos;convierteFecha&apos;&#x0A;- Destination type: &apos;holamundo.RestServerDatabase&apos;&#x0A;- Declared visibility: &apos;private&apos;" comments="false" description="Extract method &apos;convierteFecha&apos;" destination="0" exceptions="false" flags="786434" id="org.eclipse.jdt.ui.extract.method" input="/src\/main\/java&lt;holamundo{RestServerDatabase.java" name="convierteFecha" replace="false" selection="3367 174" stamp="1554889822034" version="1.0" visibility="2"/>
+</session>

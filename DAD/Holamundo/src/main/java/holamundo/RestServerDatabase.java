@@ -1,5 +1,9 @@
 package holamundo;
 
+import java.text.DateFormat;
+import java.text.ParseException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
 import io.vertx.core.AbstractVerticle;
@@ -34,6 +38,7 @@ public class RestServerDatabase extends AbstractVerticle {
 		router.post("/encendido").handler(this::handleEncendidoPS4);
 		router.post("/apagado").handler(this::handleApagadoPS4);
 		router.get("/usuarios").handler(this::handleAllSensors);
+		router.post("/ActivacionControlParental").handler(this::handleActivacionControlParental);
 		router.get("/products/:productID/info").handler(this::handleProduct);
 		router.put("/products/:productID/:property").handler(this::handleProductProperty);
 		router.put("/usuarios").handler(this::handleUsuario);
@@ -71,6 +76,84 @@ public class RestServerDatabase extends AbstractVerticle {
 				routingConext.response().setStatusCode(400).end();
 			}
 		});
+	}
+
+	// ACTIVACION CONTROL PARENTAL
+	private void handleActivacionControlParental(RoutingContext routingConext) {
+		
+		//long unixTime2 = 0; // = System.currentTimeMillis() / 1000L;
+		// convert seconds to milliseconds
+
+		JsonObject idJson = routingConext.getBodyAsJson();
+		int intId = idJson.getInteger("id");
+		int activado = idJson.getInteger("activado");
+		String fechaInicio = idJson.getString("fI");
+		String fechaFin = idJson.getString("fF");
+		DateFormat formate = new SimpleDateFormat("dd-MM-yyyy,HH:mm:ss");
+
+		long fechaIni = convierteFecha(fechaInicio, formate).getTime()/1000L;
+		long fechaFi = convierteFecha(fechaFin, formate).getTime()/1000L;
+		//unixTime = fechaIni.getTime() / 1000L;
+
+		mySQLClient.getConnection(connection -> {
+			if (connection.succeeded()) {
+				connection.result().query(
+						"UPDATE `dad_db`.`placa` SET `permitir_encendido` = 0 WHERE `idplaca` = +" + intId + "; ",
+						result -> {
+
+							if (result.succeeded()) {
+
+								JsonObject responseJson = new JsonObject();
+
+								connection.result().query(
+										"INSERT INTO `dad_db`.`control_parental`(`activado`,`id_placa`,`fecha_hora_comienzo`,`fecha_hora_fin`)VALUES("
+												+ activado + "," + intId + "," + fechaIni + "," + fechaFi + "); ",
+										result2 -> {
+
+											if (result.succeeded()) {
+
+												responseJson.put("id", intId);
+												routingConext.response().end(responseJson.encode());
+												System.out.println(result);
+
+											} else {
+												System.out.println("1111111111111111");
+												System.out.println(result.cause().getMessage());
+												routingConext.response().setStatusCode(400).end();
+
+											}
+											connection.result().close();
+										});
+
+							} else {
+								System.out.println("22222222222222222");
+								System.out.println(result.cause().getMessage());
+								routingConext.response().setStatusCode(400).end();
+
+							}
+							connection.result().close();
+						});
+
+			} else {
+				System.out.println("33333333333333333");
+				connection.result().close();
+				System.out.println(connection.cause().getMessage());
+				routingConext.response().setStatusCode(400).end();
+
+			}
+		});
+	}
+
+	private Date convierteFecha(String fechaInicio, DateFormat formate) {
+		Date fechaIni = null;
+		try {
+			fechaIni = formate.parse(fechaInicio);
+			
+		} catch (ParseException e) {
+			// TODO Auto-generated catch block
+			System.out.println(e);
+		}
+		return fechaIni;
 	}
 
 	// DETECTAR ENCENDIDO ps4
@@ -206,38 +289,37 @@ public class RestServerDatabase extends AbstractVerticle {
 	}
 
 	private void handleUsuario(RoutingContext routingContext) {
-		try{
-			
-		
-		JsonObject jsonObject = routingContext.getBodyAsJson();
-		String strNom = jsonObject.getString("nombre_usuario");
-        String strCon = jsonObject.getString("contraseña");
-		System.out.println(strNom+" "+strCon);
-		mySQLClient.getConnection(connection -> {
-			if (connection.succeeded()) {
-				connection.result().query("INSERT INTO `dad_db`.`usuario`(`nombre_usuario`, `contraseña`) VALUES(\""
-						+ strNom + "\",\"" + strCon + "\");", result -> {
-							if (result.succeeded()) {
+		try {
 
-								String jsonResult = result.result().toJson().encodePrettily();
-								routingContext.response().end(jsonResult);
-								System.out.println(result);
-							} else {
-								System.out.println(result.cause().getMessage());
-								routingContext.response().setStatusCode(400).end();
-							}
-							connection.result().close();
-						});
-			} else {
-				connection.result().close();
-				System.out.println(connection.cause().getMessage());
-				routingContext.response().setStatusCode(400).end();
-			}
-		});
-		}catch(Exception e) {
+			JsonObject jsonObject = routingContext.getBodyAsJson();
+			String strNom = jsonObject.getString("nombre_usuario");
+			String strCon = jsonObject.getString("contraseña");
+			System.out.println(strNom + " " + strCon);
+			mySQLClient.getConnection(connection -> {
+				if (connection.succeeded()) {
+					connection.result().query("INSERT INTO `dad_db`.`usuario`(`nombre_usuario`, `contraseña`) VALUES(\""
+							+ strNom + "\",\"" + strCon + "\");", result -> {
+								if (result.succeeded()) {
+
+									String jsonResult = result.result().toJson().encodePrettily();
+									routingContext.response().end(jsonResult);
+									System.out.println(result);
+								} else {
+									System.out.println(result.cause().getMessage());
+									routingContext.response().setStatusCode(400).end();
+								}
+								connection.result().close();
+							});
+				} else {
+					connection.result().close();
+					System.out.println(connection.cause().getMessage());
+					routingContext.response().setStatusCode(400).end();
+				}
+			});
+		} catch (Exception e) {
 			System.out.println(e);
 			routingContext.response().setStatusCode(400).end();
-		}		
+		}
 	}
 
 	private void handleProductProperty(RoutingContext routingContext) {
