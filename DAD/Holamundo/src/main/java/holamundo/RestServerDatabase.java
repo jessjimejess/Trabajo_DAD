@@ -80,8 +80,8 @@ public class RestServerDatabase extends AbstractVerticle {
 
 	// ACTIVACION CONTROL PARENTAL
 	private void handleActivacionControlParental(RoutingContext routingConext) {
-		
-		//long unixTime2 = 0; // = System.currentTimeMillis() / 1000L;
+
+		// long unixTime2 = 0; // = System.currentTimeMillis() / 1000L;
 		// convert seconds to milliseconds
 
 		JsonObject idJson = routingConext.getBodyAsJson();
@@ -91,9 +91,9 @@ public class RestServerDatabase extends AbstractVerticle {
 		String fechaFin = idJson.getString("fF");
 		DateFormat formate = new SimpleDateFormat("dd-MM-yyyy,HH:mm:ss");
 
-		long fechaIni = convierteFecha(fechaInicio, formate).getTime()/1000L;
-		long fechaFi = convierteFecha(fechaFin, formate).getTime()/1000L;
-		//unixTime = fechaIni.getTime() / 1000L;
+		long fechaIni = convierteFecha(fechaInicio, formate).getTime() / 1000L;
+		long fechaFi = convierteFecha(fechaFin, formate).getTime() / 1000L;
+		// unixTime = fechaIni.getTime() / 1000L;
 
 		mySQLClient.getConnection(connection -> {
 			if (connection.succeeded()) {
@@ -148,7 +148,7 @@ public class RestServerDatabase extends AbstractVerticle {
 		Date fechaIni = null;
 		try {
 			fechaIni = formate.parse(fechaInicio);
-			
+
 		} catch (ParseException e) {
 			// TODO Auto-generated catch block
 			System.out.println(e);
@@ -165,7 +165,7 @@ public class RestServerDatabase extends AbstractVerticle {
 		mySQLClient.getConnection(connection -> {
 			if (connection.succeeded()) {
 				connection.result().query(
-						"UPDATE `dad_db`.`placa` SET `estado_placa` = 1 WHERE `idplaca` = +" + intId + "; ", result -> {
+						"UPDATE `dad_db`.`placa` SET `estado_ps4` = 1 WHERE `idplaca` = +" + intId + "; ", result -> {
 
 							if (result.succeeded()) {
 
@@ -213,39 +213,56 @@ public class RestServerDatabase extends AbstractVerticle {
 		int intId = idJson.getInteger("id");
 
 		mySQLClient.getConnection(connection -> {
+
 			if (connection.succeeded()) {
-				connection.result().query("SELECT MAX(idhistorial)FROM dad_db.historial WHERE placa = " + intId + " ;",
-						result -> {
-							JsonObject responseJson = new JsonObject();
+				connection.result().query(
+						"UPDATE `dad_db`.`placa` SET `estado_ps4` = 0 WHERE `idplaca` = +" + intId + "; ", result -> {
+
 							if (result.succeeded()) {
-								List<JsonObject> l = result.result().getRows();
-								int num = l.get(0).getInteger("MAX(idhistorial)");
-								System.out.println(num);
-								connection.result().query("UPDATE `dad_db`.`historial` SET `fecha_hora_fin` = "
-										+ unixTime + " WHERE `idhistorial` = " + num + "; ", result2 -> {
+								connection.result().query(
+										"SELECT MAX(idhistorial)FROM dad_db.historial WHERE placa = " + intId + " ;",
+										result2 -> {
+											JsonObject responseJson = new JsonObject();
+											if (result2.succeeded()) {
+												List<JsonObject> l = result2.result().getRows();
+												int num = l.get(0).getInteger("MAX(idhistorial)");
+												System.out.println(num);
+												connection.result()
+														.query("UPDATE `dad_db`.`historial` SET `fecha_hora_fin` = "
+																+ unixTime + " WHERE `idhistorial` = " + num + "; ",
+																result3 -> {
 
-											if (result.succeeded()) {
+																	if (result3.succeeded()) {
 
-												responseJson.put("id", intId);
-												routingConext.response().end(responseJson.encode());
-												System.out.println(result);
+																		responseJson.put("id", intId);
+																		routingConext.response()
+																				.end(responseJson.encode());
+																		System.out.println(result3);
+
+																	} else {
+																		System.out
+																				.println(result3.cause().getMessage());
+																		routingConext.response().setStatusCode(400)
+																				.end();
+
+																	}
+																	connection.result().close();
+																});
+
+												routingConext.response().setStatusCode(200).end();
 
 											} else {
-												System.out.println(result.cause().getMessage());
+												System.out.println(result2.cause().getMessage());
 												routingConext.response().setStatusCode(400).end();
 
 											}
 											connection.result().close();
 										});
-
-								routingConext.response().setStatusCode(200).end();
-
 							} else {
 								System.out.println(result.cause().getMessage());
 								routingConext.response().setStatusCode(400).end();
 
 							}
-							connection.result().close();
 						});
 
 			} else {
