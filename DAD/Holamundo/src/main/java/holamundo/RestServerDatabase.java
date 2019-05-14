@@ -20,7 +20,7 @@ public class RestServerDatabase extends AbstractVerticle {
 	private AsyncSQLClient mySQLClient;
 
 	public void start(Future<Void> startFuture) {
-		JsonObject config = new JsonObject().put("host", "localhost").put("username", "root").put("password", "elmalo2008")
+		JsonObject config = new JsonObject().put("host", "localhost").put("username", "root").put("password", "root")
 				.put("database", "dad_db").put("port", 3306);
 		mySQLClient = MySQLClient.createShared(vertx, config);
 
@@ -37,23 +37,20 @@ public class RestServerDatabase extends AbstractVerticle {
 		router.post("/arranque").handler(this::handleArranque);
 		router.post("/encendido").handler(this::handleEncendidoPS4);
 		router.post("/apagado").handler(this::handleApagadoPS4);
+		router.get("/usuarios").handler(this::handleAllSensors);
 		router.post("/ActivacionControlParental").handler(this::handleActivacionControlParental);
-		router.post("/DesactivacionControlParental").handler(this::handleDesactivacionControlParental);
-		router.get("/placasUsuario/:idUsuario").handler(this::handlePlacasUsuario);
-		router.get("/historialPlaca/:idPlaca").handler(this::handleHistorialPlaca);
-		router.get("/controlParentalPlaca/:idPlaca").handler(this::handleCPPlaca);
+		router.get("/products/:productID/info").handler(this::handleProduct);
+		router.put("/products/:productID/:property").handler(this::handleProductProperty);
 		router.put("/usuarios").handler(this::handleUsuario);
 
 	}
 
 	// ESTADO PLACA
 	private void handleArranque(RoutingContext routingConext) {
-		try {
-        System.out.println("Hola");
+
 		JsonObject idJson = routingConext.getBodyAsJson();
 		int intId = idJson.getInteger("id");
-		
-        
+
 		mySQLClient.getConnection(connection -> {
 			if (connection.succeeded()) {
 				connection.result().query(
@@ -79,9 +76,6 @@ public class RestServerDatabase extends AbstractVerticle {
 				routingConext.response().setStatusCode(400).end();
 			}
 		});
-        }catch(Exception  e) {
-        	System.out.println(e);
-        }
 	}
 
 	// ACTIVACION CONTROL PARENTAL
@@ -162,66 +156,6 @@ public class RestServerDatabase extends AbstractVerticle {
 		return fechaIni;
 	}
 
-	
-	private void handleDesactivacionControlParental(RoutingContext routingConext) {
-		
-		JsonObject idJson = routingConext.getBodyAsJson();
-		int intId = idJson.getInteger("id");
-		long unixTime = System.currentTimeMillis() / 1000L;
-		System.out.println(unixTime);
-		
-		mySQLClient.getConnection(connection -> {
-			if (connection.succeeded()) {
-				connection.result().query(
-						"UPDATE `dad_db`.`placa` SET `permitir_encendido` = 1 WHERE `idplaca` = +" + intId + "; ",
-						result -> {
-		
-							if (result.succeeded()) {
-								connection.result().query(
-										"SELECT MAX(idPK)FROM dad_db.control_parental WHERE id_placa = " + intId + " ;",
-										result2 -> {
-											if(result2.succeeded()) {
-											   List<JsonObject> l = result2.result().getRows();
-											   int num = l.get(0).getInteger("MAX(idPK)");
-											   System.out.println(num);
-											   connection.result()
-											   .query("UPDATE `dad_db`.`control_parental` SET `fecha_hora_fin` = "
-													+ unixTime + ", activado = 0 WHERE `idPK` = " + num + "; ",
-													result3 -> {
-														if (!(result3.succeeded())) {
-															System.out.println(result.cause().getMessage());
-															routingConext.response().setStatusCode(400).end();
-														}else {
-															routingConext.response().setStatusCode(200).end();
-														}
-														
-														
-											
-													});
-											}else {
-												System.out.println(result2.cause().getMessage());
-												routingConext.response().setStatusCode(400).end();
-												
-											}
-										});
-							
-                                         
-							}else {
-								System.out.println(result.cause().getMessage());
-								routingConext.response().setStatusCode(400).end();
-							}
-		
-						});
-			}else {
-				System.out.println(connection.cause().getMessage());
-				routingConext.response().setStatusCode(400).end();
-			}
-			});
-		
-		
-	
-	
-	}
 	// DETECTAR ENCENDIDO ps4
 	private void handleEncendidoPS4(RoutingContext routingConext) {
 		long unixTime = System.currentTimeMillis() / 1000L;
@@ -339,16 +273,13 @@ public class RestServerDatabase extends AbstractVerticle {
 		});
 	}
 
-	private void handlePlacasUsuario(RoutingContext routingConext) {
-		String paramStr = routingConext.pathParam("idUsuario");
-		int idUsuario = Integer.parseInt(paramStr);
+	private void handleAllSensors(RoutingContext routingConext) {
 		mySQLClient.getConnection(connection -> {
 			if (connection.succeeded()) {
-				connection.result().query("SELECT * FROM dad_db.placa WHERE usuario = " + idUsuario + ";", result -> {
+				connection.result().query("SELECT * FROM dad_db.usuario;", result -> {
 					if (result.succeeded()) {
 						String jsonResult = result.result().toJson().encodePrettily();
-						
-						routingConext.response().putHeader("content-type", "application/json").end(jsonResult);
+						routingConext.response().end(jsonResult);
 						System.out.println(result);
 					} else {
 						System.out.println(result.cause().getMessage());
@@ -363,71 +294,19 @@ public class RestServerDatabase extends AbstractVerticle {
 			}
 		});
 	}
-	
-	
-	private void handleHistorialPlaca(RoutingContext routingConext) {
-		String paramStr = routingConext.pathParam("idPlaca");
-		int idPlaca = Integer.parseInt(paramStr);
-		mySQLClient.getConnection(connection -> {
-			if (connection.succeeded()) {
-				connection.result().query("SELECT * FROM dad_db.historial WHERE placa = " + idPlaca + ";", result -> {
-					if (result.succeeded()) {
-						String jsonResult = result.result().toJson().encodePrettily();
-						
-						routingConext.response().putHeader("content-type", "application/json").end(jsonResult);
-						System.out.println(result);
-					} else {
-						System.out.println(result.cause().getMessage());
-						routingConext.response().setStatusCode(400).end();
-					}
-					connection.result().close();
-				});
-			} else {
-				connection.result().close();
-				System.out.println(connection.cause().getMessage());
-				routingConext.response().setStatusCode(400).end();
-			}
-		});
+
+	private void handleProduct(RoutingContext routingContext) {
+		String paramStr = routingContext.pathParam("productID");
+		int paramInt = Integer.parseInt(paramStr);
+		JsonObject jsonObject = new JsonObject();
+		jsonObject.put("serial", "asfas234ewsdcdwe24");
+		jsonObject.put("id", paramInt);
+		jsonObject.put("name", "TV Samsung");
+		routingContext.response().putHeader("content-type", "application/json").end(jsonObject.encode());
 	}
-   
-	
-	private void handleCPPlaca(RoutingContext routingConext) {
-		String paramStr = routingConext.pathParam("idPlaca");
-		int idPlaca = Integer.parseInt(paramStr);
-		mySQLClient.getConnection(connection -> {
-			if (connection.succeeded()) {
-				connection.result().query("SELECT * FROM dad_db.control_parental WHERE id_placa = " + idPlaca + ";", result -> {
-					if (result.succeeded()) {
-						String jsonResult = result.result().toJson().encodePrettily();
-						
-						routingConext.response().putHeader("content-type", "application/json").end(jsonResult);
-						System.out.println(result);
-					} else {
-						System.out.println(result.cause().getMessage());
-						routingConext.response().setStatusCode(400).end();
-					}
-					connection.result().close();
-				});
-			} else {
-				connection.result().close();
-				System.out.println(connection.cause().getMessage());
-				routingConext.response().setStatusCode(400).end();
-			}
-		});
-	}
-	
-	
-	
-    
-	
-	
-	
-	
-	
-	
-	
+
 	private void handleUsuario(RoutingContext routingContext) {
-		
+		try {
 
 			JsonObject jsonObject = routingContext.getBodyAsJson();
 			String strNom = jsonObject.getString("nombre_usuario");
@@ -440,7 +319,7 @@ public class RestServerDatabase extends AbstractVerticle {
 								if (result.succeeded()) {
 
 									String jsonResult = result.result().toJson().encodePrettily();
-									routingContext.response().putHeader("content-type", "application/json").end(jsonResult);
+									routingContext.response().end(jsonResult);
 									System.out.println(result);
 								} else {
 									System.out.println(result.cause().getMessage());
@@ -454,7 +333,18 @@ public class RestServerDatabase extends AbstractVerticle {
 					routingContext.response().setStatusCode(400).end();
 				}
 			});
-		
+		} catch (Exception e) {
+			System.out.println(e);
+			routingContext.response().setStatusCode(400).end();
+		}
+	}
+
+	private void handleProductProperty(RoutingContext routingContext) {
+		String paramStr = routingContext.pathParam("productID");
+		int paramInt = Integer.parseInt(paramStr);
+		JsonObject body = routingContext.getBodyAsJson();
+		// Peticion BBDD
+		routingContext.response().putHeader("content-type", "application/json").end(body.encode());
 	}
 
 }
