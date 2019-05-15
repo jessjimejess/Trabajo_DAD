@@ -112,7 +112,7 @@ public class MqttExample extends AbstractVerticle {
 		 * vuestro servidor. Esta IP puede cambiar cuando os desconectáis de la red, por
 		 * lo que aseguraros siempre antes de lanzar el cliente que la IP es correcta.
 		 */
-		mqttClient.connect(1883, "localhost", s -> {
+		mqttClient.connect(1883, "192.168.43.48", s -> {
 
 			/*
 			 * Nos suscribimos al topic_2. Aquí debera indicar el nombre del topic al que os
@@ -135,6 +135,10 @@ public class MqttExample extends AbstractVerticle {
 					 * servidor reenvía el mensaje a esos clientes -> los clientes (en este caso el
 					 * cliente actual) recibe el mensaje y lo procesa si fuera necesario.
 					 */
+					Random random = new Random();
+					mqttClient.publish("topic_2", Buffer.buffer(new JsonObject().put("action", random.nextInt(2) == 0 ? "hola" : "adion")
+							.put("timestamp", Calendar.getInstance().getTimeInMillis())
+							.put("clientId", mqttClient.clientId()).encode()),MqttQoS.AT_LEAST_ONCE, false, false);
 					mqttClient.publishHandler(new Handler<MqttPublishMessage>() {
 						@Override
 						public void handle(MqttPublishMessage arg0) {
