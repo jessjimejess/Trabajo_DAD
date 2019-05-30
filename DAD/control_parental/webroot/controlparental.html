@@ -1,0 +1,54 @@
+<!doctype html>
+
+<html lang="es">
+<head>
+  <meta charset="utf-8">
+  
+  
+  <!-- <script src="https://cdnjs.cloudflare.com/ajax/libs/require.js/2.3.6/require.js"></script> -->
+  <script src="https://code.jquery.com/jquery-1.11.1.min.js"></script>
+  <script src="https://code.jquery.com/ui/1.12.1/jquery-ui.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/paho-mqtt/1.0.1/mqttws31.min.js"></script>
+  <script src="http://momentjs.com/downloads/moment.min.js"></script>
+  <script src="/web/js/cargaBD.js"></script>
+
+  <link rel="stylesheet" href="https://use.fontawesome.com/releases/v5.8.2/css/all.css" integrity="sha384-oS3vJWv+0UjzBfQzYUhtDYW+Pj2yciDJxpsK1OYPAYjqT085Qq/1cq5FLXAZQ7Ay" crossorigin="anonymous">
+  <link rel="stylesheet" href="/web/css/style.css">
+
+</head>
+
+<body style="margin: 0%">
+   <div class = "page_header">
+     <h3>CONTROL PARENTAL</h3>
+   </div>
+
+   <div class = "placas_body">
+
+
+
+   </div>
+   <div class = "historial_placa" id="dialog" style="display: none;">
+     <table id = "tabla_historial">
+       
+      <tr class="table_head">
+        <th>Inicio</th>
+        <th>Fin</th>
+        <th>Tiempo</th>
+      </tr>
+     </table>
+   </div>
+   
+   
+   
+   <div class = "form_on" style="display: none;">
+     <form name = "form">
+        <label for="in_fechaFin">FECHA DESACTIVADO</label>
+        <input type="text" placeholder = "MM-DD-YYYY hh:mm:ss" id="in_fechaFin">
+        <button type="button" class="button submit" onclick="return submitForm()">ACTIVAR</button>
+      </form>
+   </div>
+   
+   
+   <div id="page-mask" style="display: none;"></div>
+</body>
+</html>

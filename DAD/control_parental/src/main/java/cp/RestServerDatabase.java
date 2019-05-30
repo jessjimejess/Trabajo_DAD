@@ -3,18 +3,24 @@ package cp;
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
+import java.util.Calendar;
 import java.util.Date;
 import java.util.List;
 
+import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.asyncsql.AsyncSQLClient;
 import io.vertx.ext.asyncsql.MySQLClient;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.RoutingContext;
 import io.vertx.ext.web.handler.BodyHandler;
+import io.vertx.ext.web.handler.CorsHandler;
 import io.vertx.ext.web.handler.StaticHandler;
+import io.vertx.mqtt.MqttClient;
+import io.vertx.mqtt.MqttClientOptions;
 
 public class RestServerDatabase extends AbstractVerticle {
 
@@ -27,7 +33,7 @@ public class RestServerDatabase extends AbstractVerticle {
 
 		Router router = Router.router(vertx);
 		
-		//Web server handler -> ip:port/web/staticfiles (funciona ok)
+		//Web server handler -> ip:port/web/staticfiles (funciona ok) 
 		router.route("/web/*").handler(StaticHandler.create("webroot"));
 		
 		vertx.createHttpServer().requestHandler(router).listen(8090, result -> {
@@ -38,7 +44,20 @@ public class RestServerDatabase extends AbstractVerticle {
 			}
 		});
 		
+
+		router.route().handler(CorsHandler.create("*")
+				.allowedMethod(io.vertx.core.http.HttpMethod.GET)
+				.allowedMethod(io.vertx.core.http.HttpMethod.POST)
+				.allowedMethod(io.vertx.core.http.HttpMethod.OPTIONS)
+				.allowedHeader("Access-Control-Allow-Method")
+				.allowedHeader("Access-Control-Allow-Origin")
+				.allowedHeader("Access-Control-Allow-Credentials")
+				.allowedHeader("Content-Type"));
+		
 		router.route().handler(BodyHandler.create());
+
+		router.post("/mqtt").handler(this::handleMQTT);
+		
 		router.post("/arranque").handler(this::handleArranque);
 		router.post("/encendido").handler(this::handleEncendidoPS4);
 		router.post("/apagado").handler(this::handleApagadoPS4);
@@ -50,7 +69,56 @@ public class RestServerDatabase extends AbstractVerticle {
 		router.put("/usuarios").handler(this::handleUsuario);
 
 	}
+    
+	//Creación de conexión MQTT con la placa
+	private void handleMQTT(RoutingContext routingConext) {
+		
+		try {
+		JsonObject idJson = routingConext.getBodyAsJson();
+		System.out.println(idJson);
+		int idPlaca = idJson.getInteger("idPlaca");
+		String accion = idJson.getString("action");
+		int fechaFin = idJson.getInteger("fechaFin"); //Fecha en UNIX!!!!!!
+		
+		MqttClient mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
+		mqttClient.connect(1883, "localhost", s -> {
 
+			mqttClient.subscribe("topic_ESP", MqttQoS.AT_LEAST_ONCE.value(), handler -> {
+				if (handler.succeeded()) {
+					System.out.println("Cliente " + mqttClient.clientId() + " suscrito correctamente al topic_ESP");
+					
+					if(accion.equals("off")) {
+						System.out.println("OFF");
+					    mqttClient.publish("topic_ESP", Buffer.buffer(new JsonObject().put("action", "OFF").put("idPlaca", idPlaca).encode()),
+							    MqttQoS.AT_LEAST_ONCE, false, false);
+					
+					}else if(accion.equals("on")) {
+						System.out.println("On");
+						mqttClient.publish("topic_ESP", Buffer.buffer(new JsonObject().put("action", "ON").put("idPlaca", idPlaca).put("fechaFin",fechaFin).encode()),
+							    MqttQoS.AT_LEAST_ONCE, false, false);
+						
+					}
+					
+					
+					routingConext.response().setStatusCode(200).putHeader("content-type", "application/json").end(new JsonObject().put("action", "OFF").put("idPlaca", idPlaca).encode());
+		            
+					
+				}else {
+					routingConext.response().setStatusCode(400).end(new JsonObject().put("errorMsg","cant connect with mqtt server").encode());
+					mqttClient.disconnect();
+				}
+				
+			   
+			});
+		});
+		}catch(Exception e) {
+			System.out.println(e);
+		}
+		
+		}
+		
+	
+	
 	// ESTADO PLACA
 	private void handleArranque(RoutingContext routingConext) {
 		try {
@@ -353,7 +421,7 @@ public class RestServerDatabase extends AbstractVerticle {
 					if (result.succeeded()) {
 						String jsonResult = result.result().toJson().encodePrettily();
 						
-						routingConext.response().putHeader("content-type", "application/json").end(jsonResult);
+						routingConext.response().putHeader("Access-Control-Request-Headers", "x-requested-with").putHeader("Access-Control-Allow-Headers", "*").putHeader("content-type", "application/json").end(jsonResult);
 						System.out.println(result);
 					} else {
 						System.out.println(result.cause().getMessage());
@@ -436,11 +504,11 @@ public class RestServerDatabase extends AbstractVerticle {
 
 			JsonObject jsonObject = routingContext.getBodyAsJson();
 			String strNom = jsonObject.getString("nombre_usuario");
-			String strCon = jsonObject.getString("contraseÃ±a");
+			String strCon = jsonObject.getString("contraseña");
 			System.out.println(strNom + " " + strCon);
 			mySQLClient.getConnection(connection -> {
 				if (connection.succeeded()) {
-					connection.result().query("INSERT INTO `dad_db`.`usuario`(`nombre_usuario`, `contraseÃ±a`) VALUES(\""
+					connection.result().query("INSERT INTO `dad_db`.`usuario`(`nombre_usuario`, `contraseña`) VALUES(\""
 							+ strNom + "\",\"" + strCon + "\");", result -> {
 								if (result.succeeded()) {
 

@@ -22,6 +22,13 @@
 			<artifactId>vertx-core</artifactId>
 			<version>3.6.3</version>
 		</dependency>
+		<!-- https://mvnrepository.com/artifact/io.vertx/vertx-rx-java -->
+		<dependency>
+			<groupId>io.vertx</groupId>
+			<artifactId>vertx-rx-java</artifactId>
+			<version>3.7.1</version>
+		</dependency>
+
 		<dependency>
 			<groupId>de.gerdi-project</groupId>
 			<artifactId>GSON</artifactId>

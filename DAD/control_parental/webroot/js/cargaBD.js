@@ -1,14 +1,17 @@
 //Peticiones AJAX al cargar la página
-var URL_BACKAPI = "http://127.0.0.1:8090/"
+var idPlacaFORM;
 
 $.ajax({
     url: "/placasUsuario/1",
     cache: false,
     type : 'GET',
     success: function(data){
+        var on = "on"
+        var off = "off"
         for(i = 0; i<data.results.length; i++){
             console.log(data)
            
+            
             
             var statusdisp = statusToString(data.results[i]["3"])
             var statuscp = statusToString(data.results[i]["4"])
@@ -18,16 +21,15 @@ $.ajax({
             var p2 = $("<p> Control parental: " + statuscp + "</p>")
             
             if(statuscp == "APAGADO"){
-                var buttoncp = $("<button class = 'button activar' id = '" + data.results[i]["0"] + "'>ACTIVAR (mqtt)</button>")
+                var buttoncp = $("<button class = 'button activar' id = '" + data.results[i]["0"] + "' onclick = 'return accionMQTT(" + data.results[i]["0"] + "," + 1 + ");'>ACTIVAR</button>")
             }else{
-                var buttoncp = $("<button class = 'button desactivar' id = '" + data.results[i]["0"] + "'>DESACTIVAR (mqtt)</button>")
+                var buttoncp = $("<button class = 'button desactivar' id = '" + data.results[i]["0"] + "' onclick = 'return accionMQTT(" + data.results[i]["0"] + "," + 0 + ");'>DESACTIVAR</button>")
             }
             
             var buttonhist = $("<button class = 'button historial' id = '" + data.results[i]["0"] + "'>HISTORIAL</button>")
             var buttonhistcp = $("<button class = 'button historial_cp' id = '" + data.results[i]["0"] + "' onclick = 'return showHistorial(" + data.results[i]["0"] + ");'>HISTORIAL CP</button>")
             
             var div = $("<div></div>").addClass("placa").append(h4,p1,p2,buttoncp,buttonhist,buttonhistcp)
-            
             
             $(".placas_body").append(div)
         }
@@ -68,12 +70,45 @@ function showHistorial(idPlaca){
             
             }
 
+            $(".historial_placa").dialog();
+
         }
 
     });
 }
 
 
+function accionMQTT(idPlaca, accion){
+    console.log(idPlaca + " " + accion)
+    if(accion){
+        console.log("Enviando peticion MQTT para activa CP")
+        idPlacaFORM = idPlaca;
+        $("#page-mask").fadeIn(300);
+        $(".form_on").dialog({close: CloseFunction,
+                              modal:true,
+                              }).fadeIn(300)
+        //A partir de aquí todo queda en mano del formulario y su listener
+
+
+
+    }else{
+        console.log("Enviando peticion MQTT para desactivar CP")
+        accion = "off"
+        mqttApiRequest(idPlaca, accion, 0);
+    }
+
+}
+
+
+function submitForm(){
+    console.log(idPlacaFORM)
+    var fechaFin = $("#in_fechaFin").val()
+    var d = new Date(fechaFin).getTime()/1000;
+    console.log(d)
+    
+    //Llamamos a la función para hacer la petición ON con AJAX.
+    mqttApiRequest(idPlacaFORM, "on", d)
+}
 
 //A partir de aquí las funciones son de utilities
 function statusToString(data){
@@ -108,4 +143,53 @@ function tratarFechas(fechaInicioUTC, fechaFinUTC){
     return [stringInicio, stringFin, stringDiferencia]
 
     
+}
+
+//Solicitud de desconexión MQTT
+function mqttApiRequest(idPlaca, accion, fechaFin){
+    console.log(idPlaca)
+    $.ajax({
+        url: "/mqtt",
+        dataType: 'json',
+        cache: false,
+        type: 'POST',
+        processData: false,
+        contentType: 'application/json',
+        data: JSON.stringify({
+            "idPlaca" : idPlaca,
+            "action" : accion,
+            "fechaFin" : fechaFin,
+        
+        }),
+
+        
+        success: function(data){
+            if(accion = "on"){
+                $(".form_on").dialog("close")
+                alert("Control parental activado con exito")
+            }
+               
+        },
+        statusCode: {
+            400: function() {
+            alert('No se puede conectar con el servidor MQTT');
+
+            }
+        }
+
+            
+
+        
+
+    });
+
+
+
+
+}
+
+function CloseFunction(){
+    $("#page-mask").fadeOut(300);
+
+
 }

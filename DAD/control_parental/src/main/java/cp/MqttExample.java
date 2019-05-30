@@ -93,7 +93,7 @@ public class MqttExample extends AbstractVerticle {
 			handleClientDisconnect(endpoint);
 		}).listen(ar -> {
 			if (ar.succeeded()) {
-				connectVirtualClient();
+				//connectVirtualClient();
 				System.out.println("MQTT server está a la escucha por el puerto " + ar.result().actualPort());
 			} else {
 				System.out.println("Error desplegando el MQTT server");
@@ -112,7 +112,7 @@ public class MqttExample extends AbstractVerticle {
 		 * vuestro servidor. Esta IP puede cambiar cuando os desconectáis de la red, por
 		 * lo que aseguraros siempre antes de lanzar el cliente que la IP es correcta.
 		 */
-		mqttClient.connect(1883, "192.168.43.48", s -> {
+		mqttClient.connect(1883, "localhost", s -> {
 
 			/*
 			 * Nos suscribimos al topic_2. Aquí debera indicar el nombre del topic al que os
