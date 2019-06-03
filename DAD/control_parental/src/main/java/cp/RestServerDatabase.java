@@ -73,12 +73,15 @@ public class RestServerDatabase extends AbstractVerticle {
 	//Creación de conexión MQTT con la placa
 	private void handleMQTT(RoutingContext routingConext) {
 		
+		
+		routingConext.response().setStatusCode(400).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","date validation error").encode());
+		
 		try {
 		JsonObject idJson = routingConext.getBodyAsJson();
-		System.out.println(idJson);
 		int idPlaca = idJson.getInteger("idPlaca");
 		String accion = idJson.getString("action");
 		int fechaFin = idJson.getInteger("fechaFin"); //Fecha en UNIX!!!!!!
+		
 		
 		MqttClient mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
 		mqttClient.connect(1883, "localhost", s -> {
@@ -104,15 +107,17 @@ public class RestServerDatabase extends AbstractVerticle {
 		            
 					
 				}else {
-					routingConext.response().setStatusCode(400).end(new JsonObject().put("errorMsg","cant connect with mqtt server").encode());
+					routingConext.response().setStatusCode(400).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","cant connect with mqtt server").encode());
 					mqttClient.disconnect();
 				}
 				
 			   
 			});
 		});
+		
 		}catch(Exception e) {
 			System.out.println(e);
+			routingConext.response().setStatusCode(500).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","Server error").encode());
 		}
 		
 		}

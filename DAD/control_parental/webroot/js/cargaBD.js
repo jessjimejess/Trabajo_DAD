@@ -26,8 +26,8 @@ $.ajax({
                 var buttoncp = $("<button class = 'button desactivar' id = '" + data.results[i]["0"] + "' onclick = 'return accionMQTT(" + data.results[i]["0"] + "," + 0 + ");'>DESACTIVAR</button>")
             }
             
-            var buttonhist = $("<button class = 'button historial' id = '" + data.results[i]["0"] + "'>HISTORIAL</button>")
-            var buttonhistcp = $("<button class = 'button historial_cp' id = '" + data.results[i]["0"] + "' onclick = 'return showHistorial(" + data.results[i]["0"] + ");'>HISTORIAL CP</button>")
+            var buttonhist = $("<button class = 'button historial' id = '" + data.results[i]["0"] + "' onclick = 'return showHistorial(" + data.results[i]["0"] + ");'>HISTORIAL</button>")
+            var buttonhistcp = $("<button class = 'button historial_cp' id = '" + data.results[i]["0"] + "' onclick = 'return showHistorialcp(" + data.results[i]["0"] + ");'>HISTORIAL CP</button>")
             
             var div = $("<div></div>").addClass("placa").append(h4,p1,p2,buttoncp,buttonhist,buttonhistcp)
             
@@ -40,6 +40,47 @@ $.ajax({
     }
     
   });
+
+
+  function showHistorialcp(idPlaca){
+    $.ajax({
+        url: "/historialPlaca/" + idPlaca,
+        cache: false,
+        type: 'GET',
+        success: function(data){
+            
+            var table = document.getElementById('tabla_historial').getElementsByTagName('tbody')[0];
+            $(".columnas_hist").remove();
+
+            for(i = 0; i<data.results.length; i++){
+
+                fechaInicioUTC = data.results[i]["2"]
+                fechaFinUTC = data.results[i]["3"]
+
+                var arrayFecha = tratarFechas(fechaInicioUTC, fechaFinUTC)
+
+                //Creación dinámica de la tabla de historiales
+                var row = table.insertRow()
+                row.setAttribute("class", "columnas_hist")
+                cell0 = row.insertCell(0).append(arrayFecha[0])
+                cell1 = row.insertCell(1).append(arrayFecha[1])
+                cell2 = row.insertCell(2).append(arrayFecha[2])
+
+               
+            
+            }
+            $("#page-mask").fadeIn(300);
+            $(".historial_placa").dialog({width: '50%',
+                                          close: CloseFunction})
+                                          .fadeIn(300);
+            
+
+        }
+
+    });
+}
+
+
 
 
 function showHistorial(idPlaca){
@@ -69,8 +110,11 @@ function showHistorial(idPlaca){
                
             
             }
-
-            $(".historial_placa").dialog();
+            $("#page-mask").fadeIn(300);
+            $(".historial_placa").dialog({width: '50%',
+                                          close: CloseFunction})
+                                          .fadeIn(300);
+            
 
         }
 
@@ -168,18 +212,24 @@ function mqttApiRequest(idPlaca, accion, fechaFin){
                 $(".form_on").dialog("close")
                 alert("Control parental activado con exito")
             }
-               
+        
         },
         statusCode: {
-            400: function() {
-            alert('No se puede conectar con el servidor MQTT');
-
-            }
-        }
+            500: function() {
+            alert('Server error');
 
             
 
-        
+            }
+        },
+        statusCode: {
+            400: function() {
+            alert('Server validation error: Introduzca la fecha con el formato adecuado.');
+
+            
+
+            }
+        }
 
     });
 
