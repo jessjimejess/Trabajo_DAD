@@ -27,7 +27,7 @@ public class RestServerDatabase extends AbstractVerticle {
 	private AsyncSQLClient mySQLClient;
 
 	public void start(Future<Void> startFuture) {
-		JsonObject config = new JsonObject().put("host", "localhost").put("username", "root").put("password", "elmalo2008")
+		JsonObject config = new JsonObject().put("host", "localhost").put("username", "root").put("password", "root")
 				.put("database", "dad_db").put("port", 3306);
 		mySQLClient = MySQLClient.createShared(vertx, config);
 
