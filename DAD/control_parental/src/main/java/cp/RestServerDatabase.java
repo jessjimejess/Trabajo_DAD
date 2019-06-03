@@ -74,7 +74,7 @@ public class RestServerDatabase extends AbstractVerticle {
 	private void handleMQTT(RoutingContext routingConext) {
 		
 		
-		routingConext.response().setStatusCode(400).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","date validation error").encode());
+		//routingConext.response().setStatusCode(400).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","date validation error").encode());
 		
 		try {
 		JsonObject idJson = routingConext.getBodyAsJson();
