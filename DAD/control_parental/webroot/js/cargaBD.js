@@ -157,10 +157,10 @@ function submitForm(){
 //A partir de aquí las funciones son de utilities
 function statusToString(data){
     if(data == 0){
-        return "APAGADO"
+        return "ENCENDIDO"
 
     }else{
-        return "ENCENDIDO"
+        return "APAGADO"
     }
 
 
