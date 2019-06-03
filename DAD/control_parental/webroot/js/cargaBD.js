@@ -44,7 +44,7 @@ $.ajax({
 
   function showHistorialcp(idPlaca){
     $.ajax({
-        url: "/historialPlaca/" + idPlaca,
+        url: "/controlParentalPlaca/" + idPlaca,
         cache: false,
         type: 'GET',
         success: function(data){
@@ -208,11 +208,19 @@ function mqttApiRequest(idPlaca, accion, fechaFin){
 
         
         success: function(data){
+            if(accion == "off"){
+                alert("Control parental desactivado")
+                location.reload(true); //No caché
+            }
+
+
             if(accion = "on"){
                 $(".form_on").dialog("close")
-                alert("Control parental activado con exito")
+                alert("Control parental activado")
+                location.reload(true);
             }
-        
+
+            
         },
         statusCode: {
             500: function() {
@@ -224,7 +232,7 @@ function mqttApiRequest(idPlaca, accion, fechaFin){
         },
         statusCode: {
             400: function() {
-            alert('Server validation error: Introduzca la fecha con el formato adecuado.');
+            alert('Error 400, compruebe:\n -Que la fecha esté bien introducida\n -Que la placa esté correctamente conectada al servidor MQTT');
 
             
 

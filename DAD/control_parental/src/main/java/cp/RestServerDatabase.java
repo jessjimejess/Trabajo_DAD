@@ -10,6 +10,7 @@ import java.util.List;
 import io.netty.handler.codec.mqtt.MqttQoS;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
 import io.vertx.core.json.JsonObject;
 import io.vertx.ext.asyncsql.AsyncSQLClient;
@@ -74,13 +75,17 @@ public class RestServerDatabase extends AbstractVerticle {
 	private void handleMQTT(RoutingContext routingConext) {
 		
 		
-		//routingConext.response().setStatusCode(400).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","date validation error").encode());
+		
 		
 		try {
 		JsonObject idJson = routingConext.getBodyAsJson();
 		int idPlaca = idJson.getInteger("idPlaca");
 		String accion = idJson.getString("action");
-		int fechaFin = idJson.getInteger("fechaFin"); //Fecha en UNIX!!!!!!
+		Integer fechaFin = idJson.getInteger("fechaFin"); //Fecha en UNIX!!!!!!
+		
+		if(fechaFin == null) {
+			routingConext.response().setStatusCode(400).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","date validation error").encode());
+		}else {
 		
 		
 		MqttClient mqttClient = MqttClient.create(vertx, new MqttClientOptions().setAutoKeepAlive(true));
@@ -94,16 +99,19 @@ public class RestServerDatabase extends AbstractVerticle {
 						System.out.println("OFF");
 					    mqttClient.publish("topic_ESP", Buffer.buffer(new JsonObject().put("action", "OFF").put("idPlaca", idPlaca).encode()),
 							    MqttQoS.AT_LEAST_ONCE, false, false);
+					    routingConext.response().setStatusCode(200).putHeader("content-type", "application/json").end(new JsonObject().put("action", "OFF").put("idPlaca", idPlaca).encode());
 					
 					}else if(accion.equals("on")) {
 						System.out.println("On");
 						mqttClient.publish("topic_ESP", Buffer.buffer(new JsonObject().put("action", "ON").put("idPlaca", idPlaca).put("fechaFin",fechaFin).encode()),
 							    MqttQoS.AT_LEAST_ONCE, false, false);
+						routingConext.response().setStatusCode(200).putHeader("content-type", "application/json").end(new JsonObject().put("action", "ON").put("idPlaca", idPlaca).encode());
+						
 						
 					}
 					
 					
-					routingConext.response().setStatusCode(200).putHeader("content-type", "application/json").end(new JsonObject().put("action", "OFF").put("idPlaca", idPlaca).encode());
+					
 		            
 					
 				}else {
@@ -114,7 +122,7 @@ public class RestServerDatabase extends AbstractVerticle {
 			   
 			});
 		});
-		
+		}
 		}catch(Exception e) {
 			System.out.println(e);
 			routingConext.response().setStatusCode(500).putHeader("content-type", "application/json").end(new JsonObject().put("errorMsg","Server error").encode());
@@ -201,7 +209,7 @@ public class RestServerDatabase extends AbstractVerticle {
 												System.out.println(result);
 
 											} else {
-												System.out.println("1111111111111111");
+												
 												System.out.println(result.cause().getMessage());
 												routingConext.response().setStatusCode(400).end();
 
@@ -210,7 +218,7 @@ public class RestServerDatabase extends AbstractVerticle {
 										});
 
 							} else {
-								System.out.println("22222222222222222");
+								
 								System.out.println(result.cause().getMessage());
 								routingConext.response().setStatusCode(400).end();
 
@@ -219,7 +227,7 @@ public class RestServerDatabase extends AbstractVerticle {
 						});
 
 			} else {
-				System.out.println("33333333333333333");
+				
 				connection.result().close();
 				System.out.println(connection.cause().getMessage());
 				routingConext.response().setStatusCode(400).end();
