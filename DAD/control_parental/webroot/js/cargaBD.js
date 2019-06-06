@@ -13,7 +13,7 @@ $.ajax({
            
             
             
-            var statusdisp = statusToString(data.results[i]["3"])
+            var statusdisp = statusToString2(data.results[i]["3"])
             var statuscp = statusToString(data.results[i]["4"])
             
             var h4 = $("<h4><i class = 'fas fa-microchip'></i>" + data.results[i]["1"].toUpperCase() + "</h4>")
@@ -166,6 +166,17 @@ function statusToString(data){
 
 }
 
+function statusToString2(data){
+    if(data == 0){
+        return "APAGADO"
+
+    }else{
+        return "ENCENDIDO"
+    }
+
+
+}
+
 
 //Calculo de la diferencia entre las 2 fechas y devolución como array de Strings para inserción en HTML
 //Lo que hace esta función es una fumada
@@ -209,14 +220,14 @@ function mqttApiRequest(idPlaca, accion, fechaFin){
         
         success: function(data){
             if(accion == "off"){
-                alert("Control parental desactivado")
+                alert("Mensaje de desactivacion enviado")
                 location.reload(true); //No caché
             }
 
 
             if(accion = "on"){
                 $(".form_on").dialog("close")
-                alert("Control parental activado")
+                alert("Mensaje de activacion enviado")
                 location.reload(true);
             }
 
@@ -232,7 +243,7 @@ function mqttApiRequest(idPlaca, accion, fechaFin){
         },
         statusCode: {
             400: function() {
-            alert('Error 400, compruebe:\n -Que la fecha esté bien introducida\n -Que la placa esté correctamente conectada al servidor MQTT');
+            alert('Error 400:\n -Fecha mal introducida o servidor MQTT no disponible')
 
             
 
